@@ -14,13 +14,13 @@ screen = pygame.display.set_mode((right_limit - left_limit, 400))
 
 class Player:
     def __init__(self):
-        raw_image1 = pygame.image.load(r"D:\Project - XII CS\player-0.png") #Standing Image
+        raw_image1 = pygame.image.load(r"player-0.png") #Standing Image
         self.image1 = pygame.transform.scale(raw_image1, (40, 50)).convert_alpha()
 
-        raw_image2 = pygame.image.load(r"D:\Project - XII CS\player-1.png") #Jumping Image
+        raw_image2 = pygame.image.load(r"player-1.png") #Jumping Image
         self.image2 = pygame.transform.scale(raw_image2, (40, 50)).convert_alpha()
 
-        raw_image3 = pygame.image.load(r"D:\Project - XII CS\player--1.png") #Falling image
+        raw_image3 = pygame.image.load(r"player--1.png") #Falling image
         self.image3 = pygame.transform.scale(raw_image3, (40, 50)).convert_alpha()
 
         self.main_image = self.image1 #Image drawn by screen
@@ -66,7 +66,7 @@ class vectorAttack:
         self.bonus1 = None
         self.bonus2 = None
         self.bonus3 = None
-        raw_image = pygame.image.load(r"D:\Project - XII CS\arrowhead.png")
+        raw_image = pygame.image.load(r"arrowhead.png")
         self.image = pygame.transform.scale(raw_image, (20, 20)).convert_alpha()
 
     def rect(self, coords):
@@ -108,7 +108,7 @@ class Coords:
 
 class PlatformTiles():
     def __init__(self, topleft):
-        raw_image = pygame.image.load(r"D:\Project - XII CS\White_Background.jpg")
+        raw_image = pygame.image.load(r"White_Background.jpg")
         self.image = pygame.transform.scale(raw_image, (10, 10)).convert()
         self.rect = self.image.get_rect(topleft=topleft)
     
@@ -121,7 +121,7 @@ attacking = False
 vectors = []
 grouped_vector_movement_coords = None
 
-raw_enemy = pygame.image.load(r"D:\Project - XII CS\enemy_red_100_by_100.png")
+raw_enemy = pygame.image.load(r"enemy_red_100_by_100.png")
 movement = -1 #-1 -> left, 1 -> right, 0 -> for neutral
 step = 2
 
@@ -187,14 +187,14 @@ def move_toward(target_coords, moving_obj, step, **kwargs):
         y_diff *= -1
         y_dir = -1
 
-    slope = (y_diff / x_diff) * y_dir * x_dir
+    slope = (y_diff / x_diff)
 
     x_step = max(((step ** 2) // (1 + (slope ** 2))) ** .5, 1) #Fron equation of slope, and pythagoras theorem, floor division to ensure only integer values; Max to ensure minimum 1 step
     y_step = slope * x_step
 
     #print("X_STEP: ", x_step, "Y_STEP: ", y_step, "SLOPE: ", slope, "X_DIFF: ", x_diff, "Y_DIFF: ", y_diff)
     moving_rect.x += x_dir * min(x_step, x_diff) #To ensure player doesn't overshoot target coords
-    moving_rect.y += y_dir * min(y_step, y_diff)
+    moving_rect.y += y_dir * min(y_step, y_diff) #dirn tells which way to move in the slope
     moving_obj.last_x = last_x
     moving_obj.last_y = last_y
 
@@ -435,7 +435,7 @@ while True:
                     p.dirn = -1
 
                 if event.key == pygame.K_k:
-                    attack = pygame.image.load(r"D:\Project - XII CS\attack_projectile.png").convert_alpha()
+                    attack = pygame.image.load(r"attack_projectile.png").convert_alpha()
                     attack_coords = (p.rect.midleft[0], (p.rect.topright[1] + p.rect.midright[1])/2)
 
                     if p.dirn != 0:
