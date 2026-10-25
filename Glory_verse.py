@@ -167,11 +167,10 @@ def quit():
     exit()
 
 def move_toward(target_coords, moving_obj, step, **kwargs):
-    print("RUNNING")
     moving_rect = moving_obj.rect
 
-    last_x = moving_rect.x
-    last_y = moving_rect.y
+    moving_obj.last_x = moving_rect.x
+    moving_obj.last_y = moving_rect.y
 
     x_diff = (target_coords[0] - moving_rect.x) or 1 #To prevent value 0
     x_dir = 1 #Right
@@ -195,8 +194,6 @@ def move_toward(target_coords, moving_obj, step, **kwargs):
     #print("X_STEP: ", x_step, "Y_STEP: ", y_step, "SLOPE: ", slope, "X_DIFF: ", x_diff, "Y_DIFF: ", y_diff)
     moving_rect.x += x_dir * min(x_step, x_diff) #To ensure player doesn't overshoot target coords
     moving_rect.y += y_dir * min(y_step, y_diff) #dirn tells which way to move in the slope
-    moving_obj.last_x = last_x
-    moving_obj.last_y = last_y
 
     if kwargs:
             print("MOVE TOWARD VALUES:\nX STEP", x_step, "\nY STEP", y_step, "\nSLOPE", slope, "\nX_DIFF", x_diff, "\nY_DIFF", y_diff, "\nX_DIR", x_dir, "\nY_DIR", y_dir, "\nrect.x", moving_rect.x, "\nrect.y", moving_rect.y)
@@ -231,7 +228,6 @@ def check_vector_movements(player: Player = p, vectors = vectors):
 
     destination_coords = p.destination_coords
     if destination_coords is not None:
-        print("DEST COORDS NOT NONE")
         destination_coords = Coords(destination_coords)
 
         destination_coords.subtract(player_coords) #Gives x and y distance from player of destination coordinates
@@ -342,19 +338,22 @@ def tiles_collision(tiles, objs):
                 continue
 
             print("COLLIDED WITH TILE: ", collided)
+            rect.x = last_x
+            rect.y = last_y
+            if i == 0:
+                obj.destination_coords = None
+                obj.vmoving = False
 
-            left = rect.left - tile_rect.left
-            top = rect.top - tile_rect.top
-
+            """
             def check_side(side1, side2, fallback_side2):
-                """SIDE1 -> tile side, SIDE2/FALLBACK -> rect side"""
+                \"""SIDE1 -> tile side, SIDE2/FALLBACK -> rect side\"""
                 diff = side1 - side2
                 if diff == 0:
                     diff = check_side(side1, fallback_side2, None)
                 return diff
                 
-            x_diff = check_side(tile.rect.left, rect.left, last_x)
-            y_diff = check_side(tile.rect.top, rect.top, last_y)
+            x_diff = check_side(rect.x, tile.rect.x, last_x)
+            y_diff = check_side(rect.y, tile.rect.y, last_y)
 
             while tile_rect.colliderect(rect):
                 rect.x += x_diff
@@ -364,12 +363,13 @@ def tiles_collision(tiles, objs):
                 global jumping, init_time
                 jumping = False
                 init_time = dt.now()
-
+            """
             break #To stop check for other tiles once a collision is detected
-
 
         if i > 0 and collided: #Ensures that only enemies are affected by this code
             obj.collided = True
+
+
 
 while True:
     """POSITIONING IN PYGAME: Later blits are placed on upper layers"""
@@ -378,9 +378,11 @@ while True:
     screen.blit(bg, (0, 0)) #Placed here so that every other draw happens after it.
 
     if right_movement:
+        p.last_x = p.rect.x
         p.rect.x += 10
 
     elif left_movement:
+        p.last_x = p.rect.x
         p.rect.x -= 10
 
     for event in pygame.event.get():
@@ -425,11 +427,13 @@ while True:
                     jumping = True
 
                 if event.key == pygame.K_d: #Handles forward movement
+                    p.last_x = p.rect.x
                     right_movement = True
                     p.rect.x += 10
                     p.dir = 1
                     
                 if event.key == pygame.K_a: #Handles backward movement
+                    p.last_x = p.rect.x
                     left_movement = True
                     p.rect.x -= 10
                     p.dirn = -1
@@ -478,8 +482,7 @@ while True:
         elif p.destination_coords[1] - p.coords[1] > 0:
             p.main_image = p.image3 #Falling image
 
-        print("MOVING TOWARD DEST COORDS")
-        move_toward(p.destination_coords, p, p.step, **{"1": 12})
+        move_toward(p.destination_coords, p, p.step)
 
     elif p.destination_coords == p.coords:
         #print("REACHED DESTINATION!")
@@ -496,18 +499,21 @@ while True:
         time_spent = time_diff.seconds + time_diff.microseconds / 1000000 #Division to convert to a float second value like .001, .002, etc.
         
         if time_spent < .2:
+            p.last_y = p.rect.y
             p.rect.y -= g * (time_spent + 1) ** 2
 
         else:
+            p.last_y = p.rect.y
             p.rect.y += g * (time_spent + .7) ** 2 #.7 to compensate for .3 increase in time_spent before else block activates
 
     elif not p.vmoving:
+        p.last_y = p.rect.y
         p.rect.y +=g
 
     #p.rect.x += 1
-
     if p.rect.y > ground_level: #Applied at last to ensure player y level isn't manipulated by anything after this.
         p.rect.y = ground_level
+        p.last_y = ground_level
 
     if p.rect.y == ground_level:
         jumping = False #Not required as init changes every jump
