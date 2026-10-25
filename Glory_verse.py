@@ -6,8 +6,9 @@ pygame.init()
 
 obs_height = 10
 obs_width = 10
+ground_level = 333
+p_ground_level = ground_level - 49 #Ground level for player by subtracting player height from actual ground. 49 to ensure player and tile collide by 1 pixel and player gets grounded
 left_limit, right_limit = 0, 800
-ground_level = 283
 vector_coords = []
 
 screen = pygame.display.set_mode((right_limit - left_limit, 400))
@@ -33,6 +34,7 @@ class Player:
         self.destination_coords = None
         self.last_x = self.rect.x
         self.last_y = self.rect.y
+        self.grounded = True
 
     @property
     def coords(self):
@@ -111,7 +113,8 @@ class PlatformTiles():
         raw_image = pygame.image.load(r"White_Background.jpg")
         self.image = pygame.transform.scale(raw_image, (10, 10)).convert()
         self.rect = self.image.get_rect(topleft=topleft)
-    
+
+level = 1
 p = Player()
 
 vector_attack = 1
@@ -141,7 +144,30 @@ for i in range(0):
 
 tiles = []
 used = []
+
+tile1 = pygame.image.load(r"tile_map-layer1.jpg") #Used in all the levels
+tile1 = pygame.transform.smoothscale(tile1, (10, 10))
+
+tile2 = pygame.image.load(r"tile_map-layer2.jpg")
+tile2 = pygame.transform.smoothscale(tile2, (10, 10))
+
 ground_levels = (260, 240, 220)
+
+level1_ground = []
+level2_ground = []
+level3_ground = []
+level4_ground = []
+
+#Level1 tiles
+for i in range(0, 800, 10):
+    "Rect for different levels"
+
+    tile_rect = pygame.rect.Rect(i, ground_level, 10, 10)
+    tile_rect2 = pygame.rect.Rect(i, ground_level + 10, 10, 10)
+    tile_rect3 = pygame.rect.Rect(i, ground_level + 20, 10, 10)
+    tile_rect4 = pygame.rect.Rect(i, ground_level + 30, 10, 10) 
+    level1_ground.append((tile_rect, tile_rect2, tile_rect3, tile_rect4))
+
 starts = (100, 200, 300)
 
 for i in range(3):
@@ -236,8 +262,8 @@ def check_vector_movements(player: Player = p, vectors = vectors):
 
     resultant.add(player.coords) #To put movements centrered around player
 
-    if resultant.coords[1] > ground_level:
-        resultant.y = ground_level
+    if resultant.coords[1] > p_ground_level:
+        resultant.y = p_ground_level
 
     player.destination_coords =  resultant.coords #Stores coords after scalar product is applied to player coords
     player.step *= multiplier
@@ -343,6 +369,7 @@ def tiles_collision(tiles, objs):
             if i == 0:
                 obj.destination_coords = None
                 obj.vmoving = False
+                obj.grounded = True
 
             """
             def check_side(side1, side2, fallback_side2):
@@ -371,11 +398,33 @@ def tiles_collision(tiles, objs):
 
 
 
+def draw_level1():
+    """Contains background, tiles, etc. for level 1.
+    
+    """
+    
+
+
+    
+    bg = pygame.image.load(r"")
+
+    screen.blit(bg, (0, 0))
+
+
 while True:
+    if level == 1:
+        screen.blit(bg, (0, 0)) #For each level, their respective bg should be placed
+        for rect_tpl in level1_ground:
+            #lyr -> layer
+            lyr1 = rect_tpl[0] 
+            screen.blit(tile1, lyr1)
+            for lyr2 in rect_tpl[1:]:
+                screen.blit(tile2, lyr2)
+
     """POSITIONING IN PYGAME: Later blits are placed on upper layers"""
 
     reward_player(len(all_hostile_rects), p)
-    screen.blit(bg, (0, 0)) #Placed here so that every other draw happens after it.
+    #Placed here so that every other draw happens after it. Screen bg blit was here
 
     if right_movement:
         p.last_x = p.rect.x
@@ -422,7 +471,7 @@ while True:
 
         if event.type in (pygame.KEYDOWN, pygame.KEYUP):
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_w and p.rect.y == ground_level: #Handles jump
+                if event.key == pygame.K_w and p.grounded: #Handles jump
                     init_time = dt.now()
                     jumping = True
 
@@ -499,24 +548,24 @@ while True:
         time_spent = time_diff.seconds + time_diff.microseconds / 1000000 #Division to convert to a float second value like .001, .002, etc.
         
         if time_spent < .2:
+            p.grounded = False
             p.last_y = p.rect.y
             p.rect.y -= g * (time_spent + 1) ** 2
 
         else:
             p.last_y = p.rect.y
             p.rect.y += g * (time_spent + .7) ** 2 #.7 to compensate for .3 increase in time_spent before else block activates
+            if p.grounded == True:
+                jumping = False #Ensures jump stops when player is on solid ground.
 
     elif not p.vmoving:
         p.last_y = p.rect.y
         p.rect.y +=g
 
     #p.rect.x += 1
-    if p.rect.y > ground_level: #Applied at last to ensure player y level isn't manipulated by anything after this.
-        p.rect.y = ground_level
-        p.last_y = ground_level
-
-    if p.rect.y == ground_level:
-        jumping = False #Not required as init changes every jump
+    if p.rect.y > p_ground_level: #Applied at last to ensure player y level isn't manipulated by anything after this.
+        p.rect.y = p_ground_level
+        p.last_y = p_ground_level
 
     for enemy in all_hostile_rects:
         enemy_movement(enemy, p)
