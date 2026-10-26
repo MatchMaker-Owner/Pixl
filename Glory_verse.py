@@ -7,7 +7,7 @@ pygame.init()
 obs_height = 10
 obs_width = 10
 ground_level = 333
-p_ground_level = ground_level - 49 #Ground level for player by subtracting player height from actual ground. 49 to ensure player and tile collide by 1 pixel and player gets grounded
+p_ground_level = ground_level - 50 #Ground level for player by subtracting player height from actual ground. 49 to ensure player and tile collide by 1 pixel and player gets grounded
 left_limit, right_limit = 0, 800
 vector_coords = []
 
@@ -107,13 +107,7 @@ class Coords:
     @property
     def coords(self):
         return self.x, self.y
-
-class PlatformTiles():
-    def __init__(self, topleft):
-        raw_image = pygame.image.load(r"White_Background.jpg")
-        self.image = pygame.transform.scale(raw_image, (10, 10)).convert()
-        self.rect = self.image.get_rect(topleft=topleft)
-
+    
 level = 1
 p = Player()
 
@@ -158,22 +152,14 @@ level2_ground = []
 level3_ground = []
 level4_ground = []
 
-#Level1 tiles
-for i in range(0, 800, 10):
-    "Rect for different levels"
 
-    tile_rect = pygame.rect.Rect(i, ground_level, 10, 10)
-    tile_rect2 = pygame.rect.Rect(i, ground_level + 10, 10, 10)
-    tile_rect3 = pygame.rect.Rect(i, ground_level + 20, 10, 10)
-    tile_rect4 = pygame.rect.Rect(i, ground_level + 30, 10, 10) 
-    level1_ground.append((tile_rect, tile_rect2, tile_rect3, tile_rect4))
 
 starts = (100, 200, 300)
 
 for i in range(3):
     start = starts[i]
     for j in range(5):
-        tile = PlatformTiles((start, ground_levels[i]))
+        tile = pygame.rect.Rect(start, ground_levels[i], 10, 10)
         start += 10
         tiles.append(tile)
         used.append(start)
@@ -356,8 +342,7 @@ def tiles_collision(tiles, objs):
         last_y = obj.last_y
         collided = False
 
-        for tile in tiles:
-            tile_rect = tile.rect
+        for tile_rect in tiles:
             collided = tile_rect.colliderect(rect)
 
             if not collided:
@@ -396,8 +381,6 @@ def tiles_collision(tiles, objs):
         if i > 0 and collided: #Ensures that only enemies are affected by this code
             obj.collided = True
 
-
-
 def draw_level1():
     """Contains background, tiles, etc. for level 1.
     
@@ -411,8 +394,24 @@ def draw_level1():
     screen.blit(bg, (0, 0))
 
 
+def load_level1():
+
+    if level1_ground:
+        return
+
+    #Level1 tiles
+    for i in range(0, 800, 10):
+        "Rect for different levels"
+
+        tile_rect = (i, ground_level, 10, 10)
+        tile_rect2 = pygame.rect.Rect(i, ground_level + 10, 10, 10)
+        tile_rect3 = pygame.rect.Rect(i, ground_level + 20, 10, 10)
+        tile_rect4 = pygame.rect.Rect(i, ground_level + 30, 10, 10) 
+        level1_ground.append((tile_rect, tile_rect2, tile_rect3, tile_rect4))
+
 while True:
     if level == 1:
+        load_level1()
         screen.blit(bg, (0, 0)) #For each level, their respective bg should be placed
         for rect_tpl in level1_ground:
             #lyr -> layer
@@ -420,7 +419,7 @@ while True:
             screen.blit(tile1, lyr1)
             for lyr2 in rect_tpl[1:]:
                 screen.blit(tile2, lyr2)
-
+    
     """POSITIONING IN PYGAME: Later blits are placed on upper layers"""
 
     reward_player(len(all_hostile_rects), p)
@@ -562,11 +561,6 @@ while True:
         p.last_y = p.rect.y
         p.rect.y +=g
 
-    #p.rect.x += 1
-    if p.rect.y > p_ground_level: #Applied at last to ensure player y level isn't manipulated by anything after this.
-        p.rect.y = p_ground_level
-        p.last_y = p_ground_level
-
     for enemy in all_hostile_rects:
         enemy_movement(enemy, p)
         screen.blit(enemy.image, enemy.rect)
@@ -613,6 +607,10 @@ while True:
             screen.blit(p.main_attack.image, rect)
 
     tiles_collision(tiles, [p] +  all_hostile_rects)
+    if level == 1:
+        lyr1 = [tile[0] for tile in level1_ground]
+        tiles_collision(lyr1, [p] + all_hostile_rects)
+
     for tile in tiles:
         screen.blit(tile.image, tile.rect)
 
