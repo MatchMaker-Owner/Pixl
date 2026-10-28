@@ -208,7 +208,7 @@ def move_toward(target_coords, moving_obj, step, **kwargs):
     slope = (y_diff / x_diff)
 
     x_step = max(((step ** 2) // (1 + (slope ** 2))) ** .5, 1) #Fron equation of slope, and pythagoras theorem, floor division to ensure only integer values; Max to ensure minimum 1 step
-    y_step = slope * x_step
+    y_step = min(slope * x_step, 2) #min applied to ensure slope doesn't explode as angle tends to 0
 
     #print("X_STEP: ", x_step, "Y_STEP: ", y_step, "SLOPE: ", slope, "X_DIFF: ", x_diff, "Y_DIFF: ", y_diff)
     moving_rect.x += x_dir * min(x_step, x_diff) #To ensure player doesn't overshoot target coords
@@ -309,10 +309,10 @@ def enemy_movement(enemy: Enemy, p: Player):
 
     dis = distance(enemy.coords, p.coords)
     if dis < 100:
-        move_toward(p.rect, enemy, enemy.step,)# **{"a":1})
+        move_toward(p.rect, enemy, enemy.step, **{"a":1})
         if enemy.rect.colliderect(p.rect):
+            print("Enemy coords: ", enemy.rect.x, enemy.rect.y, "\nPlayer: ", p.rect.x, p.rect.y)
             quit()
-
         return
 
     enemy_ylevel = enemy.rect.bottomleft[1]
@@ -355,7 +355,7 @@ def tiles_collision(tiles, objs):
             if not collided:
                 continue
 
-            print("COLLIDED WITH TILE: ", collided)
+            #print("COLLIDED WITH TILE: ", collided)
             rect.x = last_x
             rect.y = last_y
             if i == 0:
