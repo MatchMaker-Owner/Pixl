@@ -9,7 +9,7 @@ obs_width = 10
 ground_level = 333
 p_ground_level = ground_level - 50 #Ground level for player by subtracting player height from actual ground. 49 to ensure player and tile collide by 1 pixel and player gets grounded
 left_limit, right_limit = 0, 800
-vector_coords = []
+vector_coords = [] 
 
 screen = pygame.display.set_mode((right_limit - left_limit, 400))
 
@@ -107,7 +107,11 @@ class Coords:
     @property
     def coords(self):
         return self.x, self.y
-    
+
+class BackGround:
+    def __init__(self):
+        self.image = None
+
 level = 1
 p = Player()
 
@@ -123,17 +127,22 @@ movement = -1 #-1 -> left, 1 -> right, 0 -> for neutral
 step = 2
 
 raw_bg = pygame.image.load(r"C:\Users\Lenovo\Documents\Video_Editing_Assets\Images\sci-fi-background.jpg")
-bg = pygame.transform.scale(raw_bg, (800, 400)).convert_alpha()
+bg1 = BackGround()
+bg2 = BackGround()
+bg3 = BackGround()
+bg4 = BackGround()
+
+bg2.image = pygame.transform.scale(raw_bg, (800, 400)).convert_alpha()
 
 projectiles = []
 proj_speed = 10
     
 all_hostile_rects = [] #Contains enemy obj except player's
-for i in range(0):
+for i in range(12):
     x_decrement = random.randrange(100, 600)
     #y_decrement = random.randrange(0, 200)
-    y_decrement = random.randrange(0, 10)
-    enemy_obj = Enemy(raw_enemy, x_decrement, y_decrement)
+    y_decrement = random.randrange(100, 200)
+    enemy_obj = Enemy(raw_enemy, x_decrement, ground_level - y_decrement)
     all_hostile_rects.append(enemy_obj)
 
 tiles = []
@@ -147,12 +156,10 @@ tile2 = pygame.transform.smoothscale(tile2, (10, 10))
 
 ground_levels = (260, 240, 220)
 
-level1_ground = []
+level1_ground = [[], [], [], []] #one list for each level
 level2_ground = []
 level3_ground = []
 level4_ground = []
-
-
 
 starts = (100, 200, 300)
 
@@ -381,58 +388,55 @@ def tiles_collision(tiles, objs):
         if i > 0 and collided: #Ensures that only enemies are affected by this code
             obj.collided = True
 
+def load_bg(level, bg1 = bg1, bg2 = bg2, bg3 = bg3, bg4 = bg4):
+    """None value checked because it shows bg isn't loaded yet."""
+
+    if level == 1 and bg1.image is None:
+        bg1.image = pygame.image.load(r"D:\Project - XII CS\Pixl\2d-background.jpg")
+        bg1.image = pygame.transform.smoothscale(bg1.image, (800, 400))
+
+    if level == 2 and bg2.image is None:
+        bg2.image = pygame.image.load(r"")
+ 
+    if level == 3 and bg3.image is None:
+        bg3.image = pygame.image.load(r"")
+ 
+    if level == 4 and bg4.image is None:
+        bg4.image = pygame.image.load(r"")
+
 def draw_level1():
-    """Contains background, tiles, etc. for level 1.
-    
-    """
-    
-
-
-    
+    """Contains background, tiles, etc. for level 1."""
     bg = pygame.image.load(r"")
 
     screen.blit(bg, (0, 0))
 
-
-def load_level1():
-
-    if level1_ground:
-        return
-
-    #Level1 tiles
+def draw_ground():
     for i in range(0, 800, 10):
-        "Rect for different levels"
-
-        tile_rect = (i, ground_level, 10, 10)
-        tile_rect2 = pygame.rect.Rect(i, ground_level + 10, 10, 10)
-        tile_rect3 = pygame.rect.Rect(i, ground_level + 20, 10, 10)
-        tile_rect4 = pygame.rect.Rect(i, ground_level + 30, 10, 10) 
-        level1_ground.append((tile_rect, tile_rect2, tile_rect3, tile_rect4))
-
+        screen.blit(tile1, (i, ground_level))
+        screen.blit(tile2, (i, ground_level + 10))
+        screen.blit(tile2, (i, ground_level + 20))
+        screen.blit(tile2, (i, ground_level + 30))
+        screen.blit(tile2, (i, ground_level + 40))
+        screen.blit(tile2, (i, ground_level + 50))
+        screen.blit(tile2, (i, ground_level + 60))
+ 
 while True:
-    if level == 1:
-        load_level1()
-        screen.blit(bg, (0, 0)) #For each level, their respective bg should be placed
-        for rect_tpl in level1_ground:
-            #lyr -> layer
-            lyr1 = rect_tpl[0] 
-            screen.blit(tile1, lyr1)
-            for lyr2 in rect_tpl[1:]:
-                screen.blit(tile2, lyr2)
-    
     """POSITIONING IN PYGAME: Later blits are placed on upper layers"""
-
+    load_bg(level)
+    if level == 1:
+        screen.blit(bg1.image, (0, 0))
+    if level == 2:
+        screen.blit(bg2.image, (0, 0))
+    if level == 3:
+        screen.blit(bg3.image, (0, 0))
+    if level == 4:
+        screen.blit(bg4.image, (0, 0))
+    draw_ground()
+    
     reward_player(len(all_hostile_rects), p)
     #Placed here so that every other draw happens after it. Screen bg blit was here
 
-    if right_movement:
-        p.last_x = p.rect.x
-        p.rect.x += 10
-
-    elif left_movement:
-        p.last_x = p.rect.x
-        p.rect.x -= 10
-
+    #KEYS SECTION
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             quit()
@@ -521,6 +525,15 @@ while True:
                 if event.key == pygame.K_a:
                     left_movement = False
 
+    #Movement Section
+    if right_movement:
+            p.last_x = p.rect.x
+            p.rect.x += 10
+    
+    elif left_movement:
+            p.last_x = p.rect.x
+            p.rect.x -= 10 
+
     if p.destination_coords is not None and p.coords != p.destination_coords:
         #print("DESTINATION IS", p.destination_coords, "WHILE CURRENTLY: ", p.coords)
         p.vmoving = True
@@ -561,6 +574,17 @@ while True:
         p.last_y = p.rect.y
         p.rect.y +=g
 
+    if p.rect.y > p_ground_level:
+        p.rect.y = p_ground_level
+        p.grounded = True
+
+    if p.rect.x < left_limit:
+        p.rect.x = left_limit
+
+    if p.rect.x > right_limit - 40: #-40 to account for player width
+        p.rect.x = right_limit - 40
+
+    #Enemy Section
     for enemy in all_hostile_rects:
         enemy_movement(enemy, p)
         screen.blit(enemy.image, enemy.rect)
@@ -582,7 +606,8 @@ while True:
                 projectile = pygame.transform.flip(projectile, 1, 0)
         
             screen.blit(projectile, proj_rect)
-
+ 
+    #Vectors section
     white = (255, 255, 255)
     brown = (139, 69, 19)
     line_width = 10
@@ -593,7 +618,7 @@ while True:
         if vector[1] != init_coords: #Ensure final coord is saved
             final_coords = vector[1]
 
-        else:
+        else: 
             final_coords = pygame.mouse.get_pos()
 
         length1 = distance(p.coords, init_coords)
@@ -606,13 +631,10 @@ while True:
             rect = p.main_attack.rect(final_coords)
             screen.blit(p.main_attack.image, rect)
 
+    #Tiles section
     tiles_collision(tiles, [p] +  all_hostile_rects)
-    if level == 1:
-        lyr1 = [tile[0] for tile in level1_ground]
-        tiles_collision(lyr1, [p] + all_hostile_rects)
-
     for tile in tiles:
-        screen.blit(tile.image, tile.rect)
+        screen.blit(tile1, tile)
 
     screen.blit(p.image, p.rect)
     #Updates all draw on screen
