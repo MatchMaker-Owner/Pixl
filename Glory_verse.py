@@ -9,7 +9,8 @@ obs_width = 10
 ground_level = 333
 p_ground_level = ground_level - 50 #Ground level for player by subtracting player height from actual ground. 49 to ensure player and tile collide by 1 pixel and player gets grounded
 left_limit, right_limit = 0, 800
-vector_coords = [] 
+vector_coords = []
+game_over = False
 
 screen = pygame.display.set_mode((right_limit - left_limit, 400))
 
@@ -35,6 +36,7 @@ class Player:
         self.last_x = self.rect.x
         self.last_y = self.rect.y
         self.grounded = True
+        self.inventory = []
 
     @property
     def coords(self):
@@ -115,6 +117,27 @@ class BackGround:
 level = 1
 p = Player()
 
+class Obj:
+    def __init__(self, name, img):
+        self.name = name
+        self.img = img
+
+img = pygame.image.load("sword-frame-filled.png")
+img = pygame.transform.scale(img, (34, 28))
+sword = Obj("sword", img)
+
+img = pygame.image.load("shield-frame-filled.png")
+img = pygame.transform.scale(img, (34, 28))
+shield = Obj("shield", img)
+
+img = pygame.image.load("rope-frame-filled.png")
+img = pygame.transform.scale(img, (34, 28))
+rope = Obj("rope", img)
+
+img = pygame.image.load("crystal-frame-filled.png")
+img = pygame.transform.scale(img, (34, 28))
+crystal = Obj("crystal", img)
+
 vector_attack = 1
 init_attack_coords = (0, 0)
 final_coords = (0, 0)
@@ -126,19 +149,19 @@ raw_enemy = pygame.image.load(r"enemy_red_100_by_100.png")
 movement = -1 #-1 -> left, 1 -> right, 0 -> for neutral
 step = 2
 
-raw_bg = pygame.image.load(r"C:\Users\Lenovo\Documents\Video_Editing_Assets\Images\sci-fi-background.jpg")
+#raw_bg = pygame.image.load(r"") #Template background
 bg1 = BackGround()
 bg2 = BackGround()
 bg3 = BackGround()
 bg4 = BackGround()
 
-bg2.image = pygame.transform.scale(raw_bg, (800, 400)).convert_alpha()
+#bg3.image = pygame.transform.scale(raw_bg, (800, 400)).convert_alpha()
 
 projectiles = []
 proj_speed = 10
     
 all_hostile_rects = [] #Contains enemy obj except player's
-for i in range(12):
+for i in range(0):
     x_decrement = random.randrange(100, 600)
     #y_decrement = random.randrange(0, 200)
     y_decrement = random.randrange(100, 200)
@@ -203,7 +226,7 @@ def move_toward(target_coords, moving_obj, step, **kwargs):
 
     if y_diff < 0:
         y_diff *= -1
-        y_dir = -1
+        y_dir = -1   
 
     slope = (y_diff / x_diff)
 
@@ -311,8 +334,7 @@ def enemy_movement(enemy: Enemy, p: Player):
     if dis < 100:
         move_toward(p.rect, enemy, enemy.step, **{"a":1})
         if enemy.rect.colliderect(p.rect):
-            print("Enemy coords: ", enemy.rect.x, enemy.rect.y, "\nPlayer: ", p.rect.x, p.rect.y)
-            quit()
+            game_over = True
         return
 
     enemy_ylevel = enemy.rect.bottomleft[1]
@@ -392,17 +414,21 @@ def load_bg(level, bg1 = bg1, bg2 = bg2, bg3 = bg3, bg4 = bg4):
     """None value checked because it shows bg isn't loaded yet."""
 
     if level == 1 and bg1.image is None:
-        bg1.image = pygame.image.load(r"D:\Project - XII CS\Pixl\2d-background.jpg")
+        bg1.image = pygame.image.load(r"2d-background.jpg").convert_alpha()
         bg1.image = pygame.transform.smoothscale(bg1.image, (800, 400))
 
     if level == 2 and bg2.image is None:
-        bg2.image = pygame.image.load(r"")
+        tiles.clear() #Clears tiles from level 1
+        bg2.image = pygame.image.load(r"bridge-in-forest.jpg")
+        bg2.image = pygame.transform.smoothscale(bg2.image, (800, 400))
  
     if level == 3 and bg3.image is None:
-        bg3.image = pygame.image.load(r"")
+        bg3.image = pygame.image.load(r"castle-gates.jpg")
+        bg3.image = pygame.transform.smoothscale(bg3.image, (800, 400))
  
     if level == 4 and bg4.image is None:
-        bg4.image = pygame.image.load(r"")
+        bg4.image = pygame.image.load(r"throne-room.png")
+        bg4.image = pygame.transform.smoothscale(bg4.image, (800, 400))
 
 def draw_level1():
     """Contains background, tiles, etc. for level 1."""
@@ -410,16 +436,26 @@ def draw_level1():
 
     screen.blit(bg, (0, 0))
 
-def draw_ground():
-    for i in range(0, 800, 10):
-        screen.blit(tile1, (i, ground_level))
-        screen.blit(tile2, (i, ground_level + 10))
-        screen.blit(tile2, (i, ground_level + 20))
-        screen.blit(tile2, (i, ground_level + 30))
-        screen.blit(tile2, (i, ground_level + 40))
-        screen.blit(tile2, (i, ground_level + 50))
-        screen.blit(tile2, (i, ground_level + 60))
- 
+def draw_ground(level):
+    if level in (1,):
+        for i in range(0, 800, 10):
+            screen.blit(tile1, (i, ground_level))
+            screen.blit(tile2, (i, ground_level + 10))
+            screen.blit(tile2, (i, ground_level + 20))
+            screen.blit(tile2, (i, ground_level + 30))
+            screen.blit(tile2, (i, ground_level + 40))
+            screen.blit(tile2, (i, ground_level + 50))
+            screen.blit(tile2, (i, ground_level + 60))
+
+brdg_lvl = 50
+anim_running = False
+wave_init = 0
+frame = 0
+wave_defeated = False
+all_inserted = False
+inserted = []
+_inserted = 0
+        
 while True:
     """POSITIONING IN PYGAME: Later blits are placed on upper layers"""
     load_bg(level)
@@ -431,10 +467,102 @@ while True:
         screen.blit(bg3.image, (0, 0))
     if level == 4:
         screen.blit(bg4.image, (0, 0))
-    draw_ground()
+    draw_ground(level)
     
     reward_player(len(all_hostile_rects), p)
     #Placed here so that every other draw happens after it. Screen bg blit was here
+
+    #LEVEL 2 SECTION
+    if level == 2:
+        #Wall to stop player from directly passing
+        if p.rect.x > 200:
+            if int(frame) == 11:
+                if "sword" in p.inventory:
+                    print("WAVE DEFEATED!!!")
+                    wave_defeated = True
+                    
+                else:
+                    print("BLACK-WATER INHABITANT HAS TAKEN YOU TO THE VALLEY OF DEATH.")
+                    game_over = True
+
+        if p.rect.x > 300 and not wave_defeated:
+                p.rect.x = 300
+            
+        if p.rect.x >= 100 and not anim_running:
+            wave_init = dt.now()
+            anim_running = True
+
+        p_ground_level = brdg_lvl
+        for i in range(0, p.rect.x, 50):
+            p_ground_level -= 1 #To compensate for tilted bridge
+
+        if p.rect.x >= right_limit - 40:
+            print("LEVEL 2 COMPLETED!")
+            level += 1
+            p.rect.bottomleft = (left_limit, ground_level)
+            p.last_x = p.rect.x
+            p.last_y = p.rect.y
+            p.destination_coords = None
+
+        #LEVEL 2: wave animation
+        if anim_running:
+            screen.blit(pygame.image.load(f"anim\\waves\\wave{int(frame)}.png"), (0, 0))
+            frame += .2
+            if frame >= 12:
+                frame = 0
+                anim_running = False
+                screen.blit(bg2.image, (0, 0))
+                draw_ground(level)
+
+    if level == 3:
+        p_ground_level = 310
+        high_ground_conds = (p.rect.x <= 80, 140 <= p.rect.x <= 260, 500 <= p.rect.x <= 650, p.rect.x >= 700)
+        if True in high_ground_conds:
+            jump_req = 80 - 50 #-50 due to player height
+        else:
+            jump_req = 130 - 50
+
+        if p.rect.y <= jump_req:
+            print("YOU HAVE CLIMBED THE CASTLE WALL.")
+            level += 1
+            p.rect.bottomleft = (left_limit, ground_level)
+            p.destination_coords = None
+
+    if level == 4:
+        if _inserted == 4:
+            if p.rect.x <= 179 or p.rect.x >= 574:
+                p_ground_level = 320
+
+            elif p.rect.x <= 198 or p.rect.x >= 550:
+                p_ground_level = 308
+
+            elif p.rect.x <= 224 or p.rect.x >= 526:
+                p_ground_level = 298
+
+            elif p.rect.x <= 237 or p.rect.x >= 515:
+                p_ground_level = 286
+
+            elif p.rect.x <= 247 or p.rect.x >= 507:
+                p_ground_level = 276
+
+            elif 362 <= p.rect.x <= 434:
+                game_over = True
+
+        else:
+            p_ground_level = 320
+
+        if _inserted != 4:
+            p.rect.y = p_ground_level
+
+        for obj in inserted:
+            if obj.name == "sword":
+                screen.blit(obj.img, (15, 295))
+            if obj.name == "shield":
+                screen.blit(obj.img, (182, 294))
+            if obj.name == "rope":
+                screen.blit(obj.img, (581, 294))
+            if obj.name == "crystal":
+                screen.blit(obj.img, (748, 294))
 
     #KEYS SECTION
     for event in pygame.event.get():
@@ -490,23 +618,6 @@ while True:
                     p.rect.x -= 10
                     p.dirn = -1
 
-                if event.key == pygame.K_k:
-                    attack = pygame.image.load(r"attack_projectile.png").convert_alpha()
-                    attack_coords = (p.rect.midleft[0], (p.rect.topright[1] + p.rect.midright[1])/2)
-
-                    if p.dirn != 0:
-                        if p.dirn == 1:
-                            attack_x = p.rect.midright[0]
-                            attack_y = (p.rect.topright[1] + p.rect.midright[1])/2
-                            attack_rect = attack.get_rect(midleft = (attack_x, attack_y))
-
-                        elif p.dirn == -1:
-                            attack_x = p.rect.midleft[0]
-                            attack_y = (p.rect.topleft[1] + p.rect.midleft[1])/2
-                            attack_rect = attack.get_rect(midright = (attack_x, attack_y))
-
-                        projectiles.append((attack, attack_rect, p.dirn))
-
                 if event.key == pygame.K_q:
                     p.vpreparing = not p.vpreparing
                     print("PREPARING: ", p.vpreparing)
@@ -517,6 +628,32 @@ while True:
                         check_vector_attack()
                         vectors.clear()
                         #print(len(all_hostile_rects), "HOSTILE RECTS AFTER ATTACK CHECK")
+                
+                if game_over and event.key == pygame.K_r:
+                    level = 1
+                    game_over = False
+
+                if level == 4 and event.key == pygame.K_k:
+                    if not all_inserted:
+                        if 0 <= p.rect.x <= 50:
+                            if sword not in inserted and "sword" in p.inventory:
+                                _inserted += 1
+                                inserted.append(sword)
+
+                        elif 150 <= p.rect.x <= 220:
+                            if shield not in inserted and "shield" in p.inventory:
+                                inserted.append(shield)
+                                _inserted += 1
+
+                        elif 550 <= p.rect.x <= 620:
+                            if rope not in inserted and "rope" in p.inventory:
+                                _inserted += 1
+                                inserted.append(rope)
+
+                        elif 720 <= p.rect.x <= 750:
+                            if crystal not in inserted and "crystal" in p.inventory:
+                                _inserted += 1
+                                inserted.append(crystal)
                     
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_d:
@@ -589,24 +726,13 @@ while True:
         enemy_movement(enemy, p)
         screen.blit(enemy.image, enemy.rect)
 
-    for j, (projectile, proj_rect, dirn) in enumerate(projectiles):
-        """dirn -> Direction when throwing"""
-        for i, h_obj in enumerate(all_hostile_rects):
-            hrect = h_obj.rect
+    if len(all_hostile_rects) == 0 and level == 1:
+        level += 1
+        print("LEVEL UP! LEVEL: ", level)
+        p.rect.bottomleft = (left_limit, ground_level)
+        p.last_x = p.rect.x
+        p.last_y = p.rect.y
 
-            if proj_rect.colliderect(hrect):
-                del all_hostile_rects[i]
-                del projectiles[j]
-                break
-
-        else:
-            proj_rect.x += (dirn * proj_speed)
-
-            if dirn == -1:
-                projectile = pygame.transform.flip(projectile, 1, 0)
-        
-            screen.blit(projectile, proj_rect)
- 
     #Vectors section
     white = (255, 255, 255)
     brown = (139, 69, 19)
@@ -637,6 +763,11 @@ while True:
         screen.blit(tile1, tile)
 
     screen.blit(p.image, p.rect)
+
+    if game_over == True:
+        death_screen = pygame.image.load(r"death_screen.png")
+        screen.blit(death_screen, (0, 0))
+
     #Updates all draw on screen
     pygame.display.update()
     clock.tick(60)
