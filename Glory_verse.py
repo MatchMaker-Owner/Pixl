@@ -7,7 +7,6 @@ pygame.init()
 obs_height = 10
 obs_width = 10
 ground_level = 333
-p_ground_level = ground_level - 50 #Ground level for player by subtracting player height from actual ground. 49 to ensure player and tile collide by 1 pixel and player gets grounded
 left_limit, right_limit = 0, 800
 vector_coords = []
 game_over = False
@@ -36,7 +35,7 @@ class Player:
         self.last_x = self.rect.x
         self.last_y = self.rect.y
         self.grounded = True
-        self.inventory = []
+        self.inventory = ["rope"]
 
     @property
     def coords(self):
@@ -114,7 +113,7 @@ class BackGround:
     def __init__(self):
         self.image = None
 
-level = 1
+level = 0
 p = Player()
 
 class Obj:
@@ -150,6 +149,7 @@ movement = -1 #-1 -> left, 1 -> right, 0 -> for neutral
 step = 2
 
 #raw_bg = pygame.image.load(r"") #Template background
+bg0 = BackGround()
 bg1 = BackGround()
 bg2 = BackGround()
 bg3 = BackGround()
@@ -161,7 +161,7 @@ projectiles = []
 proj_speed = 10
     
 all_hostile_rects = [] #Contains enemy obj except player's
-for i in range(0):
+for i in range(12):
     x_decrement = random.randrange(100, 600)
     #y_decrement = random.randrange(0, 200)
     y_decrement = random.randrange(100, 200)
@@ -309,8 +309,11 @@ def check_vector_attack(hostile_rects = all_hostile_rects, vctr_lst = vectors, p
                     enemy.hp -= dmg
                     print("DEALT: ", dmg, "\nREMAINING HP: ", enemy.hp)
                     if enemy.hp <= 0:
-                        print("ENEMY KILLED!")
-                        updated_hostile_rects.pop(j) #Removes enemy from hostile rects list
+                        try:
+                            print("ENEMY KILLED!")
+                            updated_hostile_rects.pop(j) #Removes enemy from hostile rects list
+                        except:
+                            pass
             
             hostile_rects.clear() #Clears hostile rects list while effecting the global one
             hostile_rects.extend(updated_hostile_rects) #Updates hostile rects list to remove dead enemies
@@ -334,6 +337,7 @@ def enemy_movement(enemy: Enemy, p: Player):
     if dis < 100:
         move_toward(p.rect, enemy, enemy.step, **{"a":1})
         if enemy.rect.colliderect(p.rect):
+            global game_over
             game_over = True
         return
 
@@ -413,6 +417,10 @@ def tiles_collision(tiles, objs):
 def load_bg(level, bg1 = bg1, bg2 = bg2, bg3 = bg3, bg4 = bg4):
     """None value checked because it shows bg isn't loaded yet."""
 
+    if level == 0 and bg0.image is None:
+        bg0.image = pygame.image.load(r"entrance.png").convert_alpha()
+        bg0.image = pygame.transform.smoothscale(bg0.image, (800, 400))
+
     if level == 1 and bg1.image is None:
         bg1.image = pygame.image.load(r"2d-background.jpg").convert_alpha()
         bg1.image = pygame.transform.smoothscale(bg1.image, (800, 400))
@@ -455,12 +463,32 @@ wave_defeated = False
 all_inserted = False
 inserted = []
 _inserted = 0
+start_menu = True
         
 while True:
     """POSITIONING IN PYGAME: Later blits are placed on upper layers"""
     load_bg(level)
+    if level == 0:
+        screen.blit(bg0.image, (0, 0))
+
     if level == 1:
-        screen.blit(bg1.image, (0, 0))
+        p_ground_level = ground_level - 49 #Ground level for player by subtracting player height from actual ground. 49 to ensure player and tile collide by 1 pixel and player gets grounded
+        if len(all_hostile_rects) == 0:
+            img = pygame.image.load("crystal-level1.png")
+            screen.blit(img, (0,0))
+
+        else:
+            screen.blit(bg1.image, (0, 0))
+
+        if p.rect.x >= right_limit - 40:
+            level += 1
+            print("LEVEL 1 COMPLETED!")
+            p.rect.bottomleft = (left_limit, ground_level)
+            p.last_x = p.rect.x
+            p.last_y = p.rect.y
+            p.destination_coords = None
+            continue
+
     if level == 2:
         screen.blit(bg2.image, (0, 0))
     if level == 3:
@@ -472,6 +500,16 @@ while True:
     reward_player(len(all_hostile_rects), p)
     #Placed here so that every other draw happens after it. Screen bg blit was here
 
+    #LEVEL 0 SECTION 
+    if level == 0:
+        p_ground_level = 305
+        if p.rect.x >= right_limit - 40:
+            level += 1
+            print("LEVEL 0 COMPLETED!")
+            p.rect.x = p.last_x = left_limit
+            p.last_y = p.rect.y = ground_level
+            continue
+            
     #LEVEL 2 SECTION
     if level == 2:
         #Wall to stop player from directly passing
@@ -503,6 +541,7 @@ while True:
             p.last_x = p.rect.x
             p.last_y = p.rect.y
             p.destination_coords = None
+            continue
 
         #LEVEL 2: wave animation
         if anim_running:
@@ -514,6 +553,7 @@ while True:
                 screen.blit(bg2.image, (0, 0))
                 draw_ground(level)
 
+    #LEVEL 3 SECTION
     if level == 3:
         p_ground_level = 310
         high_ground_conds = (p.rect.x <= 80, 140 <= p.rect.x <= 260, 500 <= p.rect.x <= 650, p.rect.x >= 700)
@@ -527,7 +567,9 @@ while True:
             level += 1
             p.rect.bottomleft = (left_limit, ground_level)
             p.destination_coords = None
+            continue
 
+    #LEVEL 4 SECTION
     if level == 4:
         if _inserted == 4:
             if p.rect.x <= 179 or p.rect.x >= 574:
@@ -631,7 +673,28 @@ while True:
                 
                 if game_over and event.key == pygame.K_r:
                     level = 1
+                    p.rect.x = p.last_x = left_limit
+                    p.rect.y = p.last_y = ground_level
+                    p.destination_coords = None
                     game_over = False
+
+                if start_menu and event.key == pygame.K_RETURN:
+                    level = 1
+                    start_menu = False
+
+                if level == 0:
+                    print("LEVEL 0: PRESS C TO COLLECT ITEMS")
+                    if 375 <= p.rect.x <= 500 and event.key == pygame.K_c:
+                        p.inventory.append("sword")
+                        p.inventory.append("shield")
+                        bg0.image = pygame.image.load(r"2d-background.jpg").convert_alpha()
+                        bg0.image = pygame.transform.smoothscale(bg0.image, (800, 400))
+
+                if level == 1:
+                    if 584 <= p.rect.x <= 652 and event.key == pygame.K_c:
+                        p.inventory.append("crystal")
+                        bg1.image = pygame.image.load(r"2d-background.jpg").convert_alpha()
+                        bg1.image = pygame.transform.smoothscale(bg1.image, (800, 400))
 
                 if level == 4 and event.key == pygame.K_k:
                     if not all_inserted:
@@ -722,16 +785,10 @@ while True:
         p.rect.x = right_limit - 40
 
     #Enemy Section
-    for enemy in all_hostile_rects:
-        enemy_movement(enemy, p)
-        screen.blit(enemy.image, enemy.rect)
-
-    if len(all_hostile_rects) == 0 and level == 1:
-        level += 1
-        print("LEVEL UP! LEVEL: ", level)
-        p.rect.bottomleft = (left_limit, ground_level)
-        p.last_x = p.rect.x
-        p.last_y = p.rect.y
+    if level == 1:
+        for enemy in all_hostile_rects:
+            enemy_movement(enemy, p)
+            screen.blit(enemy.image, enemy.rect)
 
     #Vectors section
     white = (255, 255, 255)
@@ -758,14 +815,15 @@ while True:
             screen.blit(p.main_attack.image, rect)
 
     #Tiles section
-    tiles_collision(tiles, [p] +  all_hostile_rects)
-    for tile in tiles:
-        screen.blit(tile1, tile)
+    if level == 1: #Since only level 1 has tiles
+        tiles_collision(tiles, [p] +  all_hostile_rects)
+        for tile in tiles:
+            screen.blit(tile1, tile)
 
     screen.blit(p.image, p.rect)
 
-    if game_over == True:
-        death_screen = pygame.image.load(r"death_screen.png")
+    if game_over:
+        death_screen = pygame.image.load(r"death-screen.png")
         screen.blit(death_screen, (0, 0))
 
     #Updates all draw on screen
