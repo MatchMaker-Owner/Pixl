@@ -464,6 +464,7 @@ all_inserted = False
 inserted = []
 _inserted = 0
 start_menu = True
+won = False
         
 while True:
     """POSITIONING IN PYGAME: Later blits are placed on upper layers"""
@@ -588,7 +589,7 @@ while True:
                 p_ground_level = 276
 
             elif 362 <= p.rect.x <= 434:
-                game_over = True
+                won = True
 
         else:
             p_ground_level = 320
@@ -679,7 +680,7 @@ while True:
                     game_over = False
 
                 if start_menu and event.key == pygame.K_RETURN:
-                    level = 1
+                    level = 0
                     start_menu = False
 
                 if level == 0:
@@ -825,6 +826,14 @@ while True:
     if game_over:
         death_screen = pygame.image.load(r"death-screen.png")
         screen.blit(death_screen, (0, 0))
+
+    if start_menu:
+        start_screen = pygame.image.load(r"start-menu.png")
+        screen.blit(start_screen, (0, 0))
+
+    if won:
+        win_screen = pygame.image.load(r"win_screen.png")
+        screen.blit(win_screen, (0, 0))
 
     #Updates all draw on screen
     pygame.display.update()
