@@ -2,8 +2,6 @@
 
 A 2D side-scrolling platformer for the desktop, written in Python with pygame, where you move and fight by **drawing vectors with your mouse**. Drag an arrow from your hero and you fly along it. Drag an arrow onto an enemy and it takes damage equal to the arrow's length. Collect four relics across five short stages and place them in the throne room to win.
 
-![Gameplay screenshot](docs/screenshots/gameplay.png)
-
 ## Why this project exists
 
 GloryVerse 2.0 was built to explore how a physics idea, **vectors**, can drive real game mechanics instead of just appearing in a textbook. Movement is vector addition (several arrows are summed into one resultant), attack damage is vector magnitude, and your reach grows as you clear enemies. It was also a way to practise building a complete game loop in pygame: event handling, gravity and collisions, simple enemy AI, level transitions and animation.
