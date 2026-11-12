@@ -27,8 +27,6 @@ GloryVerse 2.0 was built to explore how a physics idea, **vectors**, can drive r
 
 ## Screenshots
 
-> Replace these with your own captures (see [Adding screenshots](#adding-screenshots)).
-
 | Title screen | Drawing vectors | Enemies in the field |
 |---|---|---|
 | ![Title screen](docs/screenshots/title.png) | ![Drawing vectors](docs/screenshots/vectors.png) | ![Field level](docs/screenshots/field.png) |
